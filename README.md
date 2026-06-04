@@ -1,1 +1,12 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/s7J27iqd)
+# TRINETRA 
+
+## Team Members
+
+Saumyajith P
+Suryaprakash S
+Valarmathi 
+
+
+## Project Details
+
+Trinetra is a ultimate evolutionary system to check for the movements , object in the unnamed zone using AI and agents will alert the respective soldiers and commanders in the region or zone.
