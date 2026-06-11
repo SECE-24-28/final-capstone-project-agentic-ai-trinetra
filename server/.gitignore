@@ -1,0 +1,40 @@
+
+# Virtual Environment
+.venv/
+
+# Environment
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs
+logs/*
+!logs/.gitkeep
+*.log
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type Checking
+.mypy_cache/
+
+# Ruff
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# Build
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
