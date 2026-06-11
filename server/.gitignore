@@ -4,6 +4,10 @@
 
 # Environment
 .env
+# YOLO models
+*.pt
+yolov8n.pt
+
 
 # Python
 __pycache__/
@@ -37,4 +41,3 @@ build/
 # OS
 .DS_Store
 Thumbs.db
-

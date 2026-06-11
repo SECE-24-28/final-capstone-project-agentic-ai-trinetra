@@ -1,9 +1,12 @@
 [project]
-name = "server"
+name = "trinetra-server"
 version = "0.1.0"
 description = "Trinetra AI-powered surveillance backend"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
+
+[tool.setuptools]
+packages = ["app"]
 
 dependencies = [
     # ==========================
@@ -20,6 +23,7 @@ dependencies = [
     "ultralytics>=8.4.64",
     "numpy>=2.4.6",
     "pillow>=12.2.0",
+    "groq>=0.11.0",
 
     # ==========================
     # Database
@@ -51,6 +55,12 @@ dependencies = [
     # ==========================
     "loguru>=0.7.3",
     "apscheduler>=3.11.2",
+
+    # ==========================
+    # Authentication
+    # ==========================
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
 
     # ==========================
     # Utilities
@@ -95,6 +105,9 @@ select = [
     "I",
     "UP",
     "B",
+]
+ignore = [
+    "B008",
 ]
 
 # ===========================================
