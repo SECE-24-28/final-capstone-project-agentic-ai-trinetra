@@ -14,7 +14,7 @@ class CameraCapture:
     Handles automatic reconnection and resource management.
     """
 
-    def __init__(self, stream_url: str, camera_id: str):
+    def __init__(self, stream_url: str | int, camera_id: str):
         self.stream_url = stream_url
         self.camera_id = camera_id
         self.cap: cv2.VideoCapture | None = None
@@ -29,7 +29,13 @@ class CameraCapture:
             if self.cap is not None:
                 self.cap.release()
 
-            self.cap = cv2.VideoCapture(self.stream_url)
+            # Handle both integer (webcam index) and string (RTSP URL) stream sources
+            if isinstance(self.stream_url, str) and self.stream_url.isdigit():
+                capture_source = int(self.stream_url)
+            else:
+                capture_source = self.stream_url
+
+            self.cap = cv2.VideoCapture(capture_source)
             if self.cap.isOpened():
                 self.is_connected = True
                 logger.info(f"Camera {self.camera_id}: Connected to {self.stream_url}")

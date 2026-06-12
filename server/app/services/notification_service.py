@@ -9,7 +9,7 @@ from app.ai.service import ai_service
 from app.notifications.dispatcher import notification_dispatcher
 from app.notifications.sender import notification_sender
 from app.notifications.websocket import websocket_manager
-from app.schemas.detection import EventStatus, FusionEvent
+from app.schemas.detection import EventStatus, FusionEvent, ThreatLevel, AIReasoningResult
 from app.services.event_service import event_service
 from app.services.threat_service import threat_service
 
@@ -44,9 +44,21 @@ class NotificationService:
             # 2. Update to PROCESSING status
             await event_service.update_status(event_id, EventStatus.PROCESSING)
 
-            # 3. AI Analysis
+            # 3. AI Analysis (fallback if AI is not available)
             logger.info(f"Starting AI analysis - event_id: {event_id}")
             ai_result = await ai_service.analyze_event(event)
+
+            if ai_result is None:
+                # Fallback to basic analysis if AI isn't available
+                logger.warning("AI service not available, using fallback analysis")
+                ai_result = AIReasoningResult(
+                    summary=f"Event detected in zone {event.zone} with {'movement' if event.movement else 'objects'}: {[obj.type for obj in event.objects]}",
+                    threat_level=ThreatLevel.LOW if not event.objects else ThreatLevel.MEDIUM,
+                    recommended_action="Monitor the area",
+                    confidence=0.5,
+                    soldier_message="Check your surroundings",
+                    command_message="Review the alert",
+                )
 
             # 4. Update to AI_ANALYZED status
             await event_service.update_status(event_id, EventStatus.AI_ANALYZED, ai_result)

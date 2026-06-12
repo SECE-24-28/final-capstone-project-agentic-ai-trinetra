@@ -6,7 +6,7 @@ Main entry point for the backend service.
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.cameras.manager import camera_manager
@@ -106,6 +106,20 @@ async def lifespan(app: FastAPI) -> Any:
     await websocket_manager.start_heartbeat()
     logger.info("WebSocket Heartbeat : Started")
 
+    # Register laptop webcam automatically
+    try:
+        await camera_manager.register_camera({
+            "camera_id": "laptop-webcam",
+            "name": "Laptop Webcam",
+            "zone": "Office",
+            "location": "Desk",
+            "stream_url": 0,  # 0 is default webcam in OpenCV
+            "enabled": True,
+        })
+        logger.info("Laptop webcam registered successfully")
+    except Exception as e:
+        logger.error(f"Failed to register laptop webcam: {e}")
+
     logger.info("=" * 40)
 
     yield
@@ -165,6 +179,18 @@ async def root() -> dict[str, str]:
         "environment": settings.ENVIRONMENT,
         "ai_provider": settings.AI_PROVIDER,
     }
+
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for real-time notifications."""
+    await websocket.accept()
+    await websocket_manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        await websocket_manager.disconnect(websocket)
 
 
 if __name__ == "__main__":

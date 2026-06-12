@@ -63,6 +63,7 @@ class EventStatus(StrEnum):
     CREATED = "created"
     MOTION_DETECTED = "motion_detected"
     YOLO_ANALYZED = "yolo_analyzed"
+    PROCESSING = "processing"
     AI_ANALYZED = "ai_analyzed"
     NOTIFIED = "notified"
     ACKNOWLEDGED = "acknowledged"

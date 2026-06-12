@@ -12,6 +12,10 @@ import numpy as np
 from loguru import logger
 
 from app.cameras.capture import CameraCapture
+from app.detection.pipeline import DetectionPipeline
+from app.detection.event_builder import event_builder
+from app.services.notification_service import notification_service
+from app.config.settings import settings
 
 
 class CameraStream:
@@ -28,6 +32,7 @@ class CameraStream:
         self.enabled = camera_config.get("enabled", True)
 
         self.capture = CameraCapture(self.stream_url, self.camera_id)
+        self.detection_pipeline = DetectionPipeline()
         self.latest_frame: np.ndarray | None = None
         self.last_frame_time: datetime | None = None
         self.fps = 0.0
@@ -35,6 +40,7 @@ class CameraStream:
         self.is_running = False
         self.dropped_frames = 0
         self.task: asyncio.Task | None = None
+        self.last_event_time: float = 0  # Track last event time for cooldown
 
     async def start(self):
         """
@@ -77,7 +83,7 @@ class CameraStream:
 
     async def _run(self):
         """
-        Background loop for continuous frame reading.
+        Background loop for continuous frame reading and processing.
         """
         frame_count = 0
         start_time = time.time()
@@ -99,11 +105,38 @@ class CameraStream:
                     end_time = time.time()
                     self.fps = 30 / (end_time - start_time)
                     start_time = end_time
+
+                # Run detection pipeline less frequently and with cooldown
+                if frame_count % 10 == 0:  # Process every 10th frame
+                    try:
+                        movement_detected, yolo_detections, tracked_objects, fg_mask = (
+                            self.detection_pipeline.process_frame(
+                                frame, self.camera_id, self.zone
+                            )
+                        )
+
+                        # Build event if movement/objects detected and cooldown passed
+                        if (movement_detected or tracked_objects) and (
+                            time.time() - self.last_event_time > settings.EVENT_COOLDOWN_SECONDS
+                        ):
+                            event = event_builder.build_event(
+                                self.camera_id,
+                                self.zone,
+                                movement_detected,
+                                tracked_objects,
+                                yolo_detections,
+                            )
+                            if event:
+                                # Send to notification service for processing
+                                asyncio.create_task(notification_service.process_event(event))
+                                self.last_event_time = time.time()
+                    except Exception as e:
+                        logger.error(f"Error processing frame: {e}", exc_info=True)
             else:
                 self.dropped_frames += 1
                 await asyncio.sleep(1)  # Wait before retry if frame acquisition fails
 
-            await asyncio.sleep(0.01)  # Prevent CPU hogging
+            await asyncio.sleep(0.03)  # Reduce CPU load a bit
 
     def get_status(self) -> dict[str, Any]:
         """

@@ -152,7 +152,7 @@ class EventBuilder:
             objects=tracked_objs,
             confidence=confidence,
             threat_category=threat_category,
-            status=EventStatus.PENDING_AI,
+            status=EventStatus.CREATED,
         )
 
         # Update last event time for deduplication
