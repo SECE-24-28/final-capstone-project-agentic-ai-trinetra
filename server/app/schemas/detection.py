@@ -91,6 +91,7 @@ class NotificationPayload(BaseModel):
     event_id: str
     threat_category: ThreatCategory
     recommended_action: str
+    analysis_source: str = "fallback"
 
 
 class FusionEvent(BaseModel):

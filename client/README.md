@@ -17,7 +17,7 @@ NEXT_PUBLIC_TRINETRA_API_URL=http://127.0.0.1:8000 npm run dev
 Mapped backend surfaces:
 
 - `/` and `/health`
-- `/auth/login`, `/auth/me`, `/auth/users`
+- `/auth/login`, `/auth/me`, `/auth/register`, `/auth/users`
 - `/system/status`, `/system/metrics`
 - `/analytics`
 - `/cameras`

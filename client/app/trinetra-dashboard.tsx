@@ -99,6 +99,14 @@ type User = {
   created_at: string;
 };
 
+type UserDraft = {
+  username: string;
+  email: string;
+  password: string;
+  role: string;
+  full_name: string;
+};
+
 type NotificationPayload = {
   priority?: string;
   zone?: string;
@@ -141,6 +149,7 @@ const endpoints: EndpointRow[] = [
   { method: "GET", path: "/health", auth: "open", purpose: "MongoDB and Redis health", mapped: "Health strip" },
   { method: "POST", path: "/auth/login", auth: "form", purpose: "JWT issue", mapped: "Access panel" },
   { method: "GET", path: "/auth/me", auth: "bearer", purpose: "Current operator", mapped: "Session card" },
+  { method: "POST", path: "/auth/register", auth: "admin", purpose: "Create operator user", mapped: "User registration form" },
   { method: "GET", path: "/auth/users", auth: "admin", purpose: "User roster", mapped: "Users table" },
   { method: "GET", path: "/system/status", auth: "bearer", purpose: "Service dependencies", mapped: "System panel" },
   { method: "GET", path: "/system/metrics", auth: "bearer", purpose: "CPU, memory, disk", mapped: "Resource panel" },
@@ -222,6 +231,13 @@ export function TrinetraDashboard() {
     name: "North Gate Camera",
     zone: "Sector A",
     stream_url: "rtsp://127.0.0.1:554/stream1",
+  });
+  const [userDraft, setUserDraft] = useState<UserDraft>({
+    username: "operator1",
+    email: "operator1@example.com",
+    password: "",
+    role: "viewer",
+    full_name: "",
   });
   const [filters, setFilters] = useState<EventFilters>({ zone: "", threat_level: "", status: "" });
   const wsRef = useRef<WebSocket | null>(null);
@@ -353,7 +369,7 @@ export function TrinetraDashboard() {
         const payload = notificationFromMessage(JSON.parse(event.data as string));
         if (!payload) return;
         const priority = payload.priority ?? "LOW";
-        const title = priority === "LOW" ? "Backend presence detected" : `${priority} notification`;
+        const title = priority === "LOW" ? "Trinetra detected presence" : `${priority} notification`;
         const message = payload.message ?? `${payload.threat_category ?? "Activity"} at ${payload.zone ?? "unknown zone"}`;
         pushToast(title, message, statusTone(priority));
       } catch {
@@ -417,6 +433,29 @@ export function TrinetraDashboard() {
       await refreshAll();
     } catch (createError) {
       pushToast("Camera registration failed", createError instanceof Error ? createError.message : "Unknown error", "danger");
+    }
+  }
+
+  async function createUser(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!authorized) {
+      pushToast("Authentication required", "Paste an admin bearer token in Access control before creating users.", "warning");
+      return;
+    }
+    try {
+      const payload = {
+        username: userDraft.username.trim(),
+        email: userDraft.email.trim(),
+        password: userDraft.password,
+        role: userDraft.role,
+        ...(userDraft.full_name.trim() ? { full_name: userDraft.full_name.trim() } : {}),
+      };
+      await apiFetch<User>("/auth/register", { method: "POST", body: JSON.stringify(payload) });
+      pushToast("User registered", `${payload.username} was added to the operator roster.`, "success");
+      setUserDraft((draft) => ({ ...draft, password: "", full_name: "" }));
+      await refreshAll();
+    } catch (createError) {
+      pushToast("User registration failed", createError instanceof Error ? createError.message : "Unknown error", "danger");
     }
   }
 
@@ -637,7 +676,37 @@ export function TrinetraDashboard() {
         </section>
 
         <section className="panel-grid two">
-          <Panel title="Operator users" meta="/auth/users">
+          <Panel title="Operator users" meta="/auth/register · /auth/users">
+            <form className="form-grid" onSubmit={createUser}>
+              <label>
+                Username
+                <input value={userDraft.username} onChange={(event) => setUserDraft((draft) => ({ ...draft, username: event.target.value }))} placeholder="new.operator" />
+              </label>
+              <label>
+                Email
+                <input value={userDraft.email} onChange={(event) => setUserDraft((draft) => ({ ...draft, email: event.target.value }))} placeholder="new.operator@example.com" type="email" />
+              </label>
+              <label>
+                Password
+                <input value={userDraft.password} onChange={(event) => setUserDraft((draft) => ({ ...draft, password: event.target.value }))} placeholder="minimum 8 characters" type="password" />
+              </label>
+              <label>
+                Role
+                <select value={userDraft.role} onChange={(event) => setUserDraft((draft) => ({ ...draft, role: event.target.value }))}>
+                  <option value="admin">admin</option>
+                  <option value="command_officer">command_officer</option>
+                  <option value="regional_officer">regional_officer</option>
+                  <option value="soldier">soldier</option>
+                  <option value="viewer">viewer</option>
+                </select>
+              </label>
+              <label className="wide-field">
+                Full name
+                <input value={userDraft.full_name} onChange={(event) => setUserDraft((draft) => ({ ...draft, full_name: event.target.value }))} placeholder="Optional display name" />
+              </label>
+              <p className="hint-text wide-field">Requires an admin bearer token from the Access control panel.</p>
+              <button className="button button-primary" type="submit">Create user</button>
+            </form>
             <div className="user-list">
               {users.length === 0 ? (
                 <div className="empty-state">Admin user roster will appear here when the token has manage-users permission.</div>

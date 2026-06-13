@@ -67,7 +67,9 @@ class AIService:
         camera_id = event.camera_id
         zone = event.zone
 
-        logger.info(f"AI request started - event_id: {event_id}, camera: {camera_id}, zone: {zone}")
+        logger.info(
+            f"Groq inference started - event_id: {event_id}, camera: {camera_id}, zone: {zone}"
+        )
 
         try:
             # Build prompt
@@ -106,7 +108,7 @@ class AIService:
                     if result:
                         latency = time.time() - start_time
                         logger.info(
-                            f"AI response received - event_id: {event_id}, "
+                            f"Groq inference completed - event_id: {event_id}, "
                             f"latency: {latency:.2f}s, "
                             f"threat_level: {result.threat_level.value}, "
                             f"confidence: {result.confidence:.2f}"
@@ -119,14 +121,14 @@ class AIService:
                         return None
 
                 except Exception as e:
-                    logger.error(f"AI request failed on attempt {attempt}: {e}")
+                    logger.error(f"Groq inference failed on attempt {attempt}: {e}")
                     if attempt < max_retries:
                         await asyncio.sleep(1 * attempt)  # Exponential backoff
                         continue
                     return None
 
         except Exception as e:
-            logger.error(f"AI analysis failed - event_id: {event_id}: {e}")
+            logger.error(f"Groq inference aborted - event_id: {event_id}: {e}")
             return None
 
     async def health_check(self) -> bool:

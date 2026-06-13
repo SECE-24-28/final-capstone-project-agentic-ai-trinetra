@@ -57,9 +57,13 @@ class NotificationSender:
             event_id=event.event_id,
             threat_category=event.threat_category,
             recommended_action=ai_result.recommended_action if ai_result else "Monitor situation",
+            analysis_source="groq" if ai_result else "fallback",
         )
 
-        logger.info(f"Notification payload built - event_id: {event.event_id}")
+        logger.info(
+            f"Notification payload built - event_id: {event.event_id}, "
+            f"analysis_source: {payload.analysis_source}"
+        )
         return payload
 
     def _category_to_priority(self, category: ThreatCategory) -> ThreatLevel:

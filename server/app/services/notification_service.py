@@ -50,7 +50,9 @@ class NotificationService:
 
             if ai_result is None:
                 # Fallback to basic analysis if AI isn't available
-                logger.warning("AI service not available, using fallback analysis")
+                logger.warning(
+                    f"Groq inference unavailable, using fallback analysis - event_id: {event_id}"
+                )
                 ai_result = AIReasoningResult(
                     summary=f"Event detected in zone {event.zone} with {'movement' if event.movement else 'objects'}: {[obj.type for obj in event.objects]}",
                     threat_level=ThreatLevel.LOW if not event.objects else ThreatLevel.MEDIUM,
